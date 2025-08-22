@@ -1,82 +1,125 @@
-# CalmCompanion — Voice-first AI for Alzheimer’s Care
+# 🧠 CalmCompanion — Voice-first AI for Alzheimer’s Care
 
-CalmCompanion is a voice-first assistant that supports people living with Alzheimer’s and their caregivers. It detects early signs of agitation from conversation, offers calming replies for the patient, and surfaces real-time triggers and tips for the caregiver.
+> A socially responsible AI assistant that supports **people living with Alzheimer’s** and their **caregivers** through gentle conversation, early detection of agitation, and real-time tips.
 
-> **Assistive only** — This project is not a medical device and does not provide medical advice.
+---
 
-## Features
-- **Voice-first PWA** (mobile web) with push-to-talk, captions (STT), and TTS replies.
-- **FastAPI backend** with in-memory sessions, risk scoring, trigger detection, and local RAG tips.
-- **Streamlit caregiver dashboard** for trends, triggers, and an explainable “why-panel”.
-- **Privacy-first demo**: local processing; no raw audio stored.
+## ✨ Why CalmCompanion?
+- Over **80% of individuals with Alzheimer’s** experience agitation at some point.  
+- **70% of caregivers** report stress and burnout from managing these unpredictable episodes.  
+- Technology often focuses on diagnosis — CalmCompanion instead focuses on **comfort, prevention, and support**.
 
-## Quickstart
+---
 
-### 1) Install Python deps
+## 🚀 Features
+- **Voice-first PWA**: push-to-talk, live captions (STT), soothing responses (TTS).  
+- **AI-driven detection**: analyzes speech for sentiment, agitation cues, and context.  
+- **Caregiver dashboard**: clear visualization of risk trends, triggers, and suggested interventions.  
+- **LLM integration (optional)**: empathetic, context-aware replies with fallback to safe heuristic rules.  
+- **Privacy-first design**: no raw audio storage; all processing is session-based.  
+- **Cross-platform**: works on Windows, macOS, and Linux.
+
+---
+
+## 🛠️ Tech Stack
+- **Backend**: FastAPI, Pydantic, Uvicorn  
+- **Frontend**: Streamlit (dashboard), vanilla JS PWA (voice interface)  
+- **ML/NLP**: heuristics + TF-IDF retrieval (RAG) + optional LLM (Ollama or cloud)  
+- **Data**: curated caregiver tips and agitation trigger taxonomy  
+
+---
+
+## 📂 Project Structure
+```
+backend/
+  app.py              # FastAPI app
+  core/               # settings, session store, LLM interface
+  inference/          # emotion detection, risk scoring, RAG tips
+frontend/
+  streamlit_app.py    # main entry
+  pages/              # Patient Chat & Caregiver Dashboard
+voice_pwa/            # voice-first Progressive Web App
+docs/                 # Model card & ethics notes
+scripts/              # helper scripts for running services
+```
+
+---
+
+## ⚡ Quickstart
+
+### 1. Setup
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate                  # Windows: .venv\Scripts\activate
-python -m pip install --upgrade pip wheel setuptools
+git clone https://github.com/AmulyaVeldandi/CalmCompanion.git
+cd CalmCompanion
+python3.12 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 ```
 
-### 2) Start backend
-```bash
-uvicorn backend.app:app --reload
-# http://127.0.0.1:8000/docs
-```
-
-### 3) Open Voice PWA
-Serve the `voice_pwa/` directory or open directly in your browser:
-```
-python -m http.server -d voice_pwa 8080
-# Visit: http://localhost:8080/index.html?api=http://localhost:8000&sid=demo1
-```
-
-### 4) Open Caregiver Dashboard (Streamlit)
-```bash
-streamlit run frontend/streamlit_app.py
-# In Dashboard → API Session: enter backend URL and sid (e.g., demo1)
-```
-
-## Project Structure
-```
-backend/
-  app.py                 # FastAPI app, routes, CORS, sessions
-  core/
-    config.py            # settings
-    session_store.py     # in-memory session store (extensible)
-  inference/
-    emotion.py           # lexicon sentiment + agitation cue extraction
-    risk.py              # risk scoring, triggers, time-of-day prior, summarize
-    rag.py               # tiny TF-IDF retrieval over caregiver tips
-  data/caregiver_guides/tips.md
-frontend/
-  streamlit_app.py       # launcher
-  pages/
-    1_Patient_Chat.py
-    2_Caregiver_Dashboard.py
-voice_pwa/
-  index.html             # voice UI (Web Speech API STT/TTS)
-  app.js
-  style.css
-docs/
-  MODEL_CARD.md
-  PRIVACY_ETHICS.md
-```
-
-## Rubric Alignment
-- **Impact**: Early warning and de-escalation for Alzheimer’s agitation; supports both patient and caregiver.
-- **UI**: Voice-first PWA with large controls; simple, high-contrast; dashboard with clear trends and tips.
-- **Code Documentation**: Clear naming, docstrings, comments, and docs in `docs/`.
-- **Relevance to Theme**: Directly addresses social impact (elder care, caregiver burden) with responsible AI.
-- **State of Project**: Both **frontend** and **backend** complete and runnable.
-- **Age of Code**: Freshly generated for this hackathon.
-
-## Commands (shortcuts)
+### 2. Run backend
 ```bash
 bash scripts/run_backend.sh
-bash scripts/run_frontend.sh
-bash scripts/serve_pwa.sh
+# or manually:
+uvicorn backend.app:app --reload
 ```
 
+### 3. Run dashboard
+```bash
+bash scripts/run_frontend.sh
+# or manually:
+streamlit run frontend/streamlit_app.py
+```
+
+### 4. Run voice app
+```bash
+bash scripts/serve_pwa.sh
+# open: http://localhost:8080/index.html?api=http://localhost:8000&sid=demo1
+```
+
+---
+
+## 🤖 Optional: LLM Integration
+Enable empathetic, context-aware responses with Ollama or a cloud model.
+
+### Local (Ollama)
+```bash
+ollama pull llama3.1:8b-instruct
+export LLM_PROVIDER=ollama
+export LLM_MODEL=llama3.1:8b-instruct
+```
+
+### Cloud
+```bash
+export LLM_PROVIDER=cloud
+export LLM_API_KEY=sk-...
+export LLM_MODEL=your-model-name
+export LLM_ENDPOINT=https://api.your-llm-provider.com
+```
+
+---
+
+## 📊 Hackathon Rubric Alignment
+- **Impact**: Addresses Alzheimer’s agitation & caregiver burden with early-warning + support.  
+- **UI**: Clean PWA with large buttons, high contrast; simple caregiver dashboard.  
+- **Code**: Modular, documented, with docstrings and CI pipeline.  
+- **Relevance**: Squarely within *Tech for Good* and *Responsible AI*.  
+- **State**: Backend + frontend complete, runnable, demo-ready.  
+- **New Code**: Written fresh during hackathon; extensible for future pilots.
+
+---
+
+## 🧭 Roadmap
+- 🌅 Add time-of-day priors for sundowning episodes.  
+- 🌍 Multilingual caregiver tips.  
+- 📱 Native mobile + smart speaker integrations.  
+- 🧪 Pilot testing with Alzheimer’s organizations.  
+
+---
+
+## ⚠️ Disclaimer
+CalmCompanion is **assistive only**. It is not a medical device and does not provide medical advice. Caregivers should always seek professional support for health concerns.
+
+---
+
+✨ *Blending empathy and AI to bring calm to patients and peace of mind to caregivers.*
