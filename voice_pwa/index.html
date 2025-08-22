@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CalmCompanion — Voice</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <h1>CalmCompanion — Voice</h1>
+    <div class="card">
+      <div class="row">
+        <div class="badge">Session: <span id="sid"></span></div>
+        <div class="badge">Backend: <span id="backend"></span></div>
+      </div>
+      <p class="small">Hold the mic while you speak. Release to send. I will reply out loud.</p>
+      <div class="row">
+        <button id="mic" class="mic">HOLD<br>TO TALK</button>
+        <div style="flex:1">
+          <div id="transcript" class="log" aria-live="polite">…</div>
+          <div class="risk"><div id="riskbar"></div></div>
+          <div id="triggers"></div>
+          <div id="tips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
