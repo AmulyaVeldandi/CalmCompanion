@@ -99,16 +99,6 @@ export LLM_ENDPOINT=https://api.your-llm-provider.com
 
 ---
 
-## 📊 Hackathon Rubric Alignment
-- **Impact**: Addresses Alzheimer’s agitation & caregiver burden with early-warning + support.  
-- **UI**: Clean PWA with large buttons, high contrast; simple caregiver dashboard.  
-- **Code**: Modular, documented, with docstrings and CI pipeline.  
-- **Relevance**: Squarely within *Tech for Good* and *Responsible AI*.  
-- **State**: Backend + frontend complete, runnable, demo-ready.  
-- **New Code**: Written fresh during hackathon; extensible for future pilots.
-
----
-
 ## 🧭 Roadmap
 - 🌅 Add time-of-day priors for sundowning episodes.  
 - 🌍 Multilingual caregiver tips.  
