@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 from backend.core.llm import LLMConfig
-from backend.core import llm_ollama, llm_cloud
+from backend.core import llm_ollama, llm_cloud, llm_huggingface
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,9 +14,9 @@ from backend.core.session_store import SessionStore, TurnRecord
 from backend.inference.emotion import analyze_text
 from backend.inference.risk import score_turn, summarize_window
 from backend.inference.rag import TinyRAG
-from backend.bedrock_agent import run_reasoning_agent
-from backend.alexa_adapter import router as alexa_router
+from backend.api import alexa_router
 from backend.event_log import add_event, get_events
+from backend.services import run_reasoning_agent, record_turn, aggregate_metrics
 
 app = FastAPI(title=settings.app_name)
 app.include_router(alexa_router)
@@ -33,9 +33,11 @@ store = SessionStore()
 rag = TinyRAG("backend/data/caregiver_guides")
 
 
+llm_model = os.getenv("HF_MODEL_PATH") or os.getenv("LLM_MODEL", "llama3.1:8b-instruct")
+
 llm_cfg = LLMConfig(
     provider=os.getenv("LLM_PROVIDER", "none"),        # "none" | "ollama" | "cloud"
-    model=os.getenv("LLM_MODEL", "llama3.1:8b-instruct"),
+    model=llm_model,
     api_key=os.getenv("LLM_API_KEY"),
     endpoint=os.getenv("LLM_ENDPOINT"),
     temperature=float(os.getenv("LLM_TEMPERATURE", "0.3")),
@@ -136,6 +138,8 @@ def voice_chat(turn: VoiceTurn) -> dict:
             reply = llm_ollama.generate_with_ollama(llm_cfg, turn.text, r["risk"], r["triggers"], tips)
         elif llm_cfg.provider == "cloud":
             reply = llm_cloud.generate_with_cloud(llm_cfg, turn.text, r["risk"], r["triggers"], tips)
+        elif llm_cfg.provider == "huggingface":
+            reply = llm_huggingface.generate_with_huggingface(llm_cfg, turn.text, r["risk"], r["triggers"], tips)
     except Exception:
         reply = None
 
@@ -151,6 +155,15 @@ def voice_chat(turn: VoiceTurn) -> dict:
             "risk_score": r["risk"],
             "active_triggers": active,
             "reply_preview": reply[:160],
+        },
+    )
+    record_turn(
+        sid,
+        rec,
+        context={
+            "turn_count": len(store.get_all(sid)),
+            "active_triggers": active,
+            "reason_model": llm_cfg.provider,
         },
     )
 
@@ -191,3 +204,8 @@ def get_logs(limit: int = 100) -> dict:
     safe_limit = max(1, min(limit, 500))
     events = get_events(safe_limit)
     return {"count": len(events), "logs": events}
+
+
+@app.get("/analytics")
+def analytics_dashboard() -> dict:
+    return aggregate_metrics()

@@ -1,0 +1,17 @@
+[Unit]
+Description=CalmCompanion caregiving stack
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/CalmCompanion
+Environment=COMPOSE_PROJECT_NAME=calmcompanion
+ExecStart=/usr/bin/docker compose -f /opt/CalmCompanion/infra/docker/docker-compose.yml up --no-color
+ExecStop=/usr/bin/docker compose -f /opt/CalmCompanion/infra/docker/docker-compose.yml down
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

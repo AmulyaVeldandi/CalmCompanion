@@ -5,8 +5,8 @@ from typing import Optional
 
 @dataclass
 class LLMConfig:
-    provider: str = "none"  # "none" | "ollama" | "cloud"
-    model: str = "llama3.1:8b-instruct"  # for ollama
+    provider: str = "none"  # "none" | "ollama" | "cloud" | "huggingface"
+    model: str = "llama3.1:8b-instruct"  # for ollama or local HF path
     api_key: Optional[str] = None
     endpoint: Optional[str] = None
     temperature: float = 0.3

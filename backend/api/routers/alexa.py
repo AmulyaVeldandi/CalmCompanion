@@ -7,8 +7,8 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.bedrock_agent import run_reasoning_agent
 from backend.event_log import add_event
+from backend.services import record_action, run_reasoning_agent
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +58,10 @@ class DeviceCommand(BaseModel):
     utterance: Optional[str] = Field(
         default=None,
         description="User utterance that triggered the command. Used to enrich Bedrock reasoning context.",
+    )
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Optional session identifier used to correlate analytics records.",
     )
 
 
@@ -299,6 +303,20 @@ def smart_home_endpoint(command: DeviceCommand) -> Dict[str, Any]:
             "plan_preview": plan[:200],
             "execution": execution_result,
         },
+    )
+    analytics_sid = command.session_id
+    if analytics_sid is None and command.parameters:
+        analytics_sid = command.parameters.get("sid")
+    record_action(
+        source="smart_home",
+        sid=analytics_sid,
+        action_payload={
+            "device": command.device,
+            "action": command.action,
+            "parameters": command.parameters or {},
+            "execution": execution_result,
+        },
+        plan_text=plan,
     )
 
     return {"status": "ok", "plan": plan, "execution": execution_result}
