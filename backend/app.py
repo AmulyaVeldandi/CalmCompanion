@@ -14,8 +14,10 @@ from backend.core.session_store import SessionStore, TurnRecord
 from backend.inference.emotion import analyze_text
 from backend.inference.risk import score_turn, summarize_window
 from backend.inference.rag import TinyRAG
+from backend.alexa_adapter import router as alexa_router
 
 app = FastAPI(title=settings.app_name)
+app.include_router(alexa_router)
 
 app.add_middleware(
     CORSMiddleware,
