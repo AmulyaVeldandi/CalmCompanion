@@ -16,6 +16,7 @@ from backend.inference.risk import score_turn, summarize_window
 from backend.inference.rag import TinyRAG
 from backend.bedrock_agent import run_reasoning_agent
 from backend.alexa_adapter import router as alexa_router
+from backend.event_log import add_event, get_events
 
 app = FastAPI(title=settings.app_name)
 app.include_router(alexa_router)
@@ -79,11 +80,40 @@ def health() -> dict:
 def generate_reasoning_plan(payload: ReasonRequest) -> ReasonResponse:
     try:
         plan = run_reasoning_agent(payload.user_input, payload.context or {})
+        add_event(
+            "reason.success",
+            {
+                "user_input_preview": payload.user_input[:120],
+                "context_keys": list((payload.context or {}).keys()),
+                "plan_preview": plan[:240],
+            },
+        )
     except ValueError as exc:
+        add_event(
+            "reason.error",
+            {
+                "error": str(exc),
+                "user_input_preview": payload.user_input[:120],
+            },
+        )
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
+        add_event(
+            "reason.error",
+            {
+                "error": str(exc),
+                "user_input_preview": payload.user_input[:120],
+            },
+        )
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - unexpected failures propagated
+        add_event(
+            "reason.error",
+            {
+                "error": str(exc),
+                "user_input_preview": payload.user_input[:120],
+            },
+        )
         raise HTTPException(status_code=500, detail="Unexpected Bedrock agent failure.") from exc
 
     return ReasonResponse(plan=plan)
@@ -96,6 +126,10 @@ def voice_chat(turn: VoiceTurn) -> dict:
 
     emo = analyze_text(turn.text)
     r = score_turn(emo["label"], emo["score"], emo["cues"], turn.text, ts_iso=ts)
+    active = [k for k, v in r["triggers"].items() if v]
+    q = " ".join(active) + " Alzheimer agitation caregiver tips" if active else "general calm tips"
+    tips = rag.query(q, k=2)
+
     reply = None
     try:
         if llm_cfg.provider == "ollama":
@@ -108,12 +142,17 @@ def voice_chat(turn: VoiceTurn) -> dict:
     if not reply or len(reply) > 400:
         reply = _make_reply(r["triggers"])
 
-    active = [k for k, v in r["triggers"].items() if v]
-    q = " ".join(active) + " Alzheimer agitation caregiver tips" if active else "general calm tips"
-    tips = rag.query(q, k=2)
-
     rec = TurnRecord(ts=ts, text=turn.text, emotion=emo, risk=r, reply=reply, tips=tips)
     store.append(sid, rec)
+    add_event(
+        "voice_turn",
+        {
+            "sid": sid,
+            "risk_score": r["risk"],
+            "active_triggers": active,
+            "reply_preview": reply[:160],
+        },
+    )
 
     return {
         "reply": reply,
@@ -145,3 +184,10 @@ def session_summary(sid: str, window: int = settings.summary_window) -> dict:
         "summary": summary,
         "count": len(turns_payload),
     }
+
+
+@app.get("/logs")
+def get_logs(limit: int = 100) -> dict:
+    safe_limit = max(1, min(limit, 500))
+    events = get_events(safe_limit)
+    return {"count": len(events), "logs": events}

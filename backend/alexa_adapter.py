@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.bedrock_agent import run_reasoning_agent
+from backend.event_log import add_event
 
 logger = logging.getLogger(__name__)
 
@@ -257,8 +258,16 @@ def smart_home_endpoint(command: DeviceCommand) -> Dict[str, Any]:
     try:
         plan = run_reasoning_agent(user_input, context)
     except ValueError as exc:
+        add_event(
+            "smart_home.error",
+            {"device": command.device, "action": command.action, "error": str(exc)},
+        )
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
+        add_event(
+            "smart_home.error",
+            {"device": command.device, "action": command.action, "error": str(exc)},
+        )
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     execution_result: Dict[str, Any]
@@ -270,9 +279,27 @@ def smart_home_endpoint(command: DeviceCommand) -> Dict[str, Any]:
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported device '{command.device}'.")
     except ValueError as exc:
+        add_event(
+            "smart_home.error",
+            {"device": command.device, "action": command.action, "error": str(exc)},
+        )
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
+        add_event(
+            "smart_home.error",
+            {"device": command.device, "action": command.action, "error": str(exc)},
+        )
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    add_event(
+        "smart_home.success",
+        {
+            "device": command.device,
+            "action": command.action,
+            "plan_preview": plan[:200],
+            "execution": execution_result,
+        },
+    )
 
     return {"status": "ok", "plan": plan, "execution": execution_result}
 
