@@ -3,7 +3,7 @@ import os
 from backend.core.llm import LLMConfig
 from backend.core import llm_ollama, llm_cloud
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
@@ -14,6 +14,7 @@ from backend.core.session_store import SessionStore, TurnRecord
 from backend.inference.emotion import analyze_text
 from backend.inference.risk import score_turn, summarize_window
 from backend.inference.rag import TinyRAG
+from backend.bedrock_agent import run_reasoning_agent
 from backend.alexa_adapter import router as alexa_router
 
 app = FastAPI(title=settings.app_name)
@@ -45,6 +46,15 @@ class VoiceTurn(BaseModel):
     text: str
     timestamp: Optional[str] = None
 
+
+class ReasonRequest(BaseModel):
+    user_input: str
+    context: Optional[Dict[str, Any]] = None
+
+
+class ReasonResponse(BaseModel):
+    plan: str
+
 def _make_reply(triggers: Dict[str, bool]) -> str:
     if triggers.get("pain"):
         return "I’m sorry you’re uncomfortable. Would a short sit and some water help right now?"
@@ -63,6 +73,20 @@ def _make_reply(triggers: Dict[str, bool]) -> str:
 @app.get("/api/health")
 def health() -> dict:
     return {"ok": True}
+
+
+@app.post("/reason", response_model=ReasonResponse)
+def generate_reasoning_plan(payload: ReasonRequest) -> ReasonResponse:
+    try:
+        plan = run_reasoning_agent(payload.user_input, payload.context or {})
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - unexpected failures propagated
+        raise HTTPException(status_code=500, detail="Unexpected Bedrock agent failure.") from exc
+
+    return ReasonResponse(plan=plan)
 
 @app.post("/api/voice_chat")
 def voice_chat(turn: VoiceTurn) -> dict:
