@@ -164,6 +164,13 @@ export LLM_ENDPOINT=https://api.your-llm-provider.com
 
 ---
 
+
+## AWS & Integrations
+- Read docs/aws_deployment.md for AWS runtime setup, Bedrock configuration, and hosting patterns.
+- Read docs/alexa_iot_setup.md for Alexa skill wiring, smart-home device support, and required environment variables.
+
+---
+
 ## 🧭 Roadmap
 - 🌅 Add time-of-day priors for sundowning episodes.  
 - 🌍 Multilingual caregiver tips.  

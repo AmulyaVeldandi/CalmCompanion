@@ -1,9 +1,23 @@
 #!/usr/bin/env bash
 
-# go to project root (folder of this script)
-cd "$(dirname "$0")/.."
+set -euo pipefail
 
-# activate venv
-source .venv/bin/activate
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
 
-python -m http.server -d voice_pwa 8080
+if [ -f ".venv/bin/activate" ]; then
+  # shellcheck disable=SC1091
+  source ".venv/bin/activate"
+fi
+
+if [ -f ".env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source ".env"
+  set +a
+fi
+
+PORT="${PWA_PORT:-8080}"
+DIRECTORY="${PWA_DIRECTORY:-voice_pwa}"
+
+exec python -m http.server "$PORT" --directory "$DIRECTORY"
