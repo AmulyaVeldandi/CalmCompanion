@@ -60,7 +60,7 @@ The scripts automatically activate `.venv` and export values from `.env`. Overri
 
 ---
 
-## AWS Hackathon Runbook
+## AWS Runbook
 1. **Sign in & permissions**  
    - Use an AWS region with Bedrock access.  
    - Create/attach an IAM role or user that allows `bedrock:InvokeModel`, `bedrock:InvokeModelWithResponseStream`, and optional DynamoDB/S3 write permissions.  
